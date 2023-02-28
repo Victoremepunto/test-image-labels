@@ -12,7 +12,24 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        build_command: [docker, podman, buildah]
     steps:
     - uses: actions/checkout@v3
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+    - name: Build the image with label
+      run: ${{ matrix.build_command }} build --file Dockerfile --label somefancylabel=true --tag my-image-name:${{ matrix.build_command }}-label .
+    - name: test label exists
+      run: |
+          if ! ${{ matrix.build_command }} inspect my-image-name:${{ matrix.build_command }}-label | grep -q 'somefancylabel'; then
+            echo "label doesn't exist!"
+            exit 1
+          fi
+    - name: Build the image without label
+      run: ${{ matrix.build_command }} build --file Dockerfile --tag my-image-name:${{ matrix.build_command }}-nolabel .
+    - name: test label exists
+      run: |
+          if ${{ matrix.build_command }} inspect my-image-name:${{ matrix.build_command }}-nolabel | grep -q 'somefancylabel'; then
+            echo "label shouldn't exist!"
+            exit 1
+          fi
