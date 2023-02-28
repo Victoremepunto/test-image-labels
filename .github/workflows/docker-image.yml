@@ -14,7 +14,35 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+    - name: Build the image with label
+      run: docker build . --file Dockerfile --label somefancylabel=true --tag my-image-name:docker-label
+    - name: test label exists
+      run: |
+          if ! docker inspect my-image-name:docker-label | grep -q 'somefancylabel'; then
+            echo "label doesn't exist!"
+            exit 1
+          fi
+    - name: Build the image without label
+      run: docker build . --file Dockerfile --tag my-image-name:docker-nolabel
+    - name: test label exists
+      run: |
+          if docker inspect my-image-name:docker-nolabel | grep -q 'somefancylabel'; then
+            echo "label shouldn't exist!"
+            exit 1
+          fi
     - name: Build the image with Podman
-      run: podman build . --file Dockerfile --tag my-image-name:$(date +%s)
+      run: podman build . --file Dockerfile --label somefancylabel=true --tag my-image-name:podman-label
+    - name: test label exists
+      run: |
+          if ! podman inspect my-image-name:podman-label | grep -q 'somefancylabel'; then
+            echo "label doesn't exist!"
+            exit 1
+          fi
+    - name: Build the image without label
+      run: podman build . --file Dockerfile --tag my-image-name:podman-nolabel
+    - name: test label exists
+      run: |
+          if podman inspect my-image-name:podman-nolabel | grep -q 'somefancylabel'; then
+            echo "label shouldn't exist!"
+            exit 1
+          fi
